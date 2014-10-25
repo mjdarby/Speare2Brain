@@ -185,6 +185,16 @@ char *str2varname(char *str)
   return str2lower(space2underscore(singlespace(str)));
 }
 
+char *strip_act(char *str)
+{
+  return str+4;
+}
+
+char *strip_scene(char *str)
+{
+  return str+6;
+}
+
 char *strindent(char *str, char *indent)
 {
   int newlines, len;

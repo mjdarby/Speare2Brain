@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
 USA.
-
+`
 ***********************************************************************/
 
 #ifndef STRUTILS_H
@@ -47,5 +47,7 @@ char *str2upper(char *str);
 char *str2varname(char *str);
 char *strindent(char *str, char *indent);
 char *strpad(char *str, int length, char fill);
+char *strip_act(char *str);
+char *strip_scene(char *str);
 
 #endif /* STRUTILS_H */

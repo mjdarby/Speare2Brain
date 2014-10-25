@@ -45,8 +45,8 @@ YACCFLAGS = --verbose
 CCFLAGS   = -O2 -Wall -lm
 LEXFLAGS  = -Cem
 
-.PHONY: all clean examples install libspl tar
-all: install examples
+.PHONY: all clean install libspl tar
+all: install
 
 examples: install
 	$(MAKE) -C $(EXAMPLEPATH) all

@@ -194,23 +194,23 @@ Act Scene {
 ActHeader:
 ACT_ROMAN COLON Comment EndSymbol {
   free(current_act);
-  current_act = newstr(str2varname($1));
-  $$ = cat4(newstr("\n"), strpad(cat2(newstr(current_act), newstr(":")), COMMENT_COLUMN, ' '), $3, newstr("\n"));
+  current_act = newstr(strip_act(str2varname($1)));
+  $$ = cat3(newstr("label,act,"), newstr(current_act), newstr(","));
   free($2);
   free($4);
 }|
 ACT_ROMAN COLON Comment error {
   report_warning("period or exclamation mark");
   free(current_act);
-  current_act = newstr(str2varname($1));
-  $$ = cat4(newstr("\n"), strpad(cat2(newstr(current_act), newstr(":")), COMMENT_COLUMN, ' '), $3, newstr("\n"));
+  current_act = newstr(strip_act(str2varname($1)));
+  $$ = cat3(newstr("label,act,"), newstr(current_act), newstr(","));
   free($2);
 }|
 ACT_ROMAN error Comment EndSymbol {
   report_warning("colon");
   free(current_act);
-  current_act = newstr(str2varname($1));
-  $$ = cat4(newstr("\n"), strpad(cat2(newstr(current_act), newstr(":")), COMMENT_COLUMN, ' '), $3, newstr("\n"));
+  current_act = newstr(strip_act(str2varname($1)));
+  $$ = cat3(newstr("label,act,"), newstr(current_act), newstr(","));
   free($4);
 };
 
@@ -378,16 +378,15 @@ StatementSymbol {
 
 EnterExit:
 LEFT_BRACKET ENTER CHARACTER RIGHT_BRACKET {
-  $$ = cat5(newstr("\nenter_scene("), int2str(yylineno), newstr(", "), str2varname($3), newstr(");\n"));
+  $$ = cat3(newstr("enter_scene,"), str2varname($3), newstr(","));
   free($1);
   free($2);
   free($4);
 }|
 LEFT_BRACKET ENTER CharacterList RIGHT_BRACKET {
-  $$ = newstr("\n");
+  $$ = cat3(newstr("enter_scene_multiple,"), newstr(int2str($3.num)), newstr(","));
   for (i = 0; i < $3.num; i++) {
-    $$ = cat6($$, newstr("enter_scene("), int2str(yylineno), newstr(", "),
-	      str2varname($3.list[i]), newstr(");\n"));
+    $$ = cat3($$, str2varname($3.list[i]), newstr(","));
   }
   free($3.list);
   free($1);
@@ -565,13 +564,13 @@ OpenYour MIND error {
 
 Jump:
 JumpPhrase ACT_ROMAN StatementSymbol {
-  $$ = cat3(newstr("goto "), str2varname($2), newstr(";\n"));
+  $$ = cat3(newstr("goto,act,"), strip_act(str2varname($2)), newstr(","));
   free($1);
   free($3);
 }|
 JumpPhrase SCENE_ROMAN StatementSymbol {
-  $$ = cat5(newstr("goto "), newstr(current_act), newstr("_"),
-	    str2varname($2), newstr(";\n"));
+  $$ = cat5(newstr("goto,act,"), newstr(current_act), newstr("scene,"),
+	    strip_scene(str2varname($2)), newstr(","));
   free($1);
   free($3);
 }|
@@ -858,23 +857,23 @@ SceneContents Line {
 SceneHeader:
 SCENE_ROMAN COLON Comment EndSymbol {
   free(current_scene);
-  current_scene = cat3(newstr(current_act), newstr("_"), str2varname($1));
-  $$ = cat4(newstr("\n"), strpad(cat2(newstr(current_scene), newstr(":")), COMMENT_COLUMN, ' '), $3, newstr("\n"));
+  current_scene = cat4(newstr("label,act,"),newstr(current_act), newstr(",scene,"), strip_scene(str2varname($1)));
+  $$ = cat2(newstr(current_scene), newstr(","));
   free($2);
   free($4);
 }|
 SCENE_ROMAN COLON Comment error {
   report_warning("period or exclamation mark");
   free(current_scene);
-  current_scene = cat3(newstr(current_act), newstr("_"), str2varname($1));
-  $$ = cat4(newstr("\n"), strpad(cat2(newstr(current_scene), newstr(":")), COMMENT_COLUMN, ' '), $3, newstr("\n"));
+  current_scene = cat4(newstr("label,act,"),newstr(current_act), newstr(",scene,"), strip_scene(str2varname($1)));
+  $$ = cat2(newstr(current_scene), newstr(","));
   free($2);
 }|
 SCENE_ROMAN error Comment EndSymbol {
   report_warning("colon");
   free(current_scene);
-  current_scene = cat3(newstr(current_act), newstr("_"), str2varname($1));
-  $$ = cat4(newstr("\n"), strpad(cat2(newstr(current_scene), newstr(":")), COMMENT_COLUMN, ' '), $3, newstr("\n"));
+  current_scene = cat4(newstr("label,act,"),newstr(current_act), newstr(",scene,"), strip_scene(str2varname($1)));
+  $$ = cat2(newstr(current_scene), newstr(","));
   free($4);
 };
 
