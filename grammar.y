@@ -229,36 +229,31 @@ BinaryOperator:
 THE_DIFFERENCE_BETWEEN {
   $$.list = (char **) malloc(3*sizeof(char **));
   $$.list[0] = newstr("sub,");
-  $$.list[1] = newstr(", ");
-  $$.list[2] = newstr(")");
+  $$.list[1] = newstr(",");
   free($1);
 }|
 THE_PRODUCT_OF {
   $$.list = (char **) malloc(3*sizeof(char **));
   $$.list[0] = newstr("mul,");
-  $$.list[1] = newstr(", ");
-  $$.list[2] = newstr(")");
+  $$.list[1] = newstr(",");
   free($1);
 }|
 THE_QUOTIENT_BETWEEN {
   $$.list = (char **) malloc(3*sizeof(char **));
   $$.list[0] = newstr("div,");
-  $$.list[1] = newstr(", ");
-  $$.list[2] = newstr(")");
+  $$.list[1] = newstr(",");
   free($1);
 }|
 THE_REMAINDER_OF_THE_QUOTIENT_BETWEEN {
   $$.list = (char **) malloc(3*sizeof(char **));
   $$.list[0] = newstr("mod,");
-  $$.list[1] = newstr(", ");
-  $$.list[2] = newstr(")");
+  $$.list[1] = newstr(",");
   free($1);
 }|
 THE_SUM_OF {
   $$.list = (char **) malloc(3*sizeof(char **));
   $$.list[0] = newstr("add,");
-  $$.list[1] = newstr(", ");
-  $$.list[2] = newstr(")");
+  $$.list[1] = newstr(",");
   free($1);
 };
 
@@ -319,17 +314,17 @@ error {
 
 Comparative:
 NegativeComparative {
-  $$ = newstr("comp1 < comp2");
+  $$ = newstr("less_than,");
   free($1);
 }|
 PositiveComparative {
-  $$ = newstr("comp1 > comp2");
+  $$ = newstr("greater_than,");
   free($1);
 };
 
 Comparison:
 NOT NonnegatedComparison {
-  $$ = cat2(newstr("!"), $2);
+  $$ = cat2(newstr("not,"), $2);
   free($1);
 }|
 NonnegatedComparison {
@@ -338,11 +333,11 @@ NonnegatedComparison {
 
 Conditional:
 IF_SO {
-  $$ = newstr("truth_flag");
+  $$ = newstr("true");
   free($1);
 }|
 IF_NOT {
-  $$ = newstr("!truth_flag");
+  $$ = newstr("false");
   free($1);
 };
 
@@ -394,16 +389,15 @@ LEFT_BRACKET ENTER CharacterList RIGHT_BRACKET {
   free($4);
 }|
 LEFT_BRACKET EXIT CHARACTER RIGHT_BRACKET {
-  $$ = cat5(newstr("\nexit_scene("), int2str(yylineno), newstr(", "), str2varname($3), newstr(");\n"));
+  $$ = cat3(newstr("exit_scene,"), str2varname($3), newstr(",\n"));
   free($1);
   free($2);
   free($4);
 }|
 LEFT_BRACKET EXEUNT CharacterList RIGHT_BRACKET {
-  $$ = newstr("\n");
+  $$ = cat3(newstr("exit_scene,"), int2str($3.num), newstr(",\n"));
   for (i = 0; i < $3.num; i++) {
-    $$ = cat6($$, newstr("exit_scene("), int2str(yylineno), newstr(", "),
-	      str2varname($3.list[i]), newstr(");\n"));
+    $$ = cat3($$, str2varname($3.list[i]), newstr(",\n"));
   }
   free($3.list);
   free($1);
@@ -411,7 +405,7 @@ LEFT_BRACKET EXEUNT CharacterList RIGHT_BRACKET {
   free($4);
 }|
 LEFT_BRACKET EXEUNT RIGHT_BRACKET {
-  $$ = cat3(newstr("\nexit_scene_all("), int2str(yylineno), newstr(");\n"));
+  $$ = newstr("exit_scene_all,\n");
   free($1);
   free($2);
   free($3);
@@ -446,7 +440,7 @@ LEFT_BRACKET error RIGHT_BRACKET {
 
 Equality:
 AS Adjective AS {
-  $$ = newstr("comp1 == comp2");
+  $$ = newstr("equal_to");
   free($1);
   free($2);
   free($3);
@@ -476,27 +470,27 @@ Comparative error {
 
 InOut:
 OpenYour HEART StatementSymbol {
-  $$ = cat3(newstr("int_output("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("int_output,\n");
   free($1);
   free($2);
   free($3);
 }|
 SPEAK SECOND_PERSON_POSSESSIVE MIND StatementSymbol {
-  $$ = cat3(newstr("char_output("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("output,\n");
   free($1);
   free($2);
   free($3);
   free($4);
 }|
 LISTEN_TO SECOND_PERSON_POSSESSIVE HEART StatementSymbol {
-  $$ = cat3(newstr("int_input("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("int_input,\n");
   free($1);
   free($2);
   free($3);
   free($4);
 }|
 OpenYour MIND StatementSymbol {
-  $$ = cat3(newstr("char_input("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("char_input,\n");
   free($1);
   free($2);
   free($3);
@@ -509,68 +503,68 @@ OpenYour error StatementSymbol {
 }|
 SPEAK error MIND StatementSymbol {
   report_warning("possessive pronoun, second person");
-  $$ = cat3(newstr("char_output("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("output,\n");
   free($1);
   free($3);
   free($4);
 }|
 LISTEN_TO error HEART StatementSymbol {
   report_warning("possessive pronoun, second person");
-  $$ = cat3(newstr("int_input("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("int_input,\n");
   free($1);
   free($3);
   free($4);
 }|
 SPEAK SECOND_PERSON_POSSESSIVE error StatementSymbol {
   report_warning("'mind'");
-  $$ = cat3(newstr("char_output("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("output,\n");
   free($1);
   free($2);
   free($4);
 }|
 LISTEN_TO SECOND_PERSON_POSSESSIVE error StatementSymbol {
   report_warning("'heart'");
-  $$ = cat3(newstr("int_input("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("int_input,\n");
   free($1);
   free($2);
   free($4);
 }|
 OpenYour HEART error {
   report_warning("period or exclamation mark");
-  $$ = cat3(newstr("int_output("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("int_output,\n");
   free($1);
   free($2);
 }|
 SPEAK SECOND_PERSON_POSSESSIVE MIND error {
   report_warning("period or exclamation mark");
-  $$ = cat3(newstr("char_output("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("output,\n");
   free($1);
   free($2);
   free($3);
 }|
 LISTEN_TO SECOND_PERSON_POSSESSIVE HEART error {
   report_warning("period or exclamation mark");
-  $$ = cat3(newstr("int_input("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("int_input,\n");
   free($1);
   free($2);
   free($3);
 }|
 OpenYour MIND error {
   report_warning("period or exclamation mark");
-  $$ = cat3(newstr("char_input("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("char_input,\n");
   free($1);
   free($2);
 };
 
 Jump:
 JumpPhrase ACT_ROMAN StatementSymbol {
-  $$ = cat3(newstr("goto,act,"), strip_act(str2varname($2)), newstr(","));
+  $$ = cat3(newstr("goto,act,"), strip_act(str2varname($2)), newstr(",\n"));
   free($1);
   free($3);
 }|
 JumpPhrase SCENE_ROMAN StatementSymbol {
   $$ = cat5(newstr("goto,act,"), newstr(current_act), newstr("scene,"),
-	    strip_scene(str2varname($2)), newstr(","));
+	    strip_scene(str2varname($2)), newstr(",\n"));
   free($1);
   free($3);
 }|
@@ -665,10 +659,10 @@ NEGATIVE_NOUN {
 
 NonnegatedComparison:
 Equality {
-  $$ = cat3(newstr("("), $1, newstr(")"));;
+  $$ = $1;
 }|
 Inequality {
-  $$ = cat3(newstr("("), $1, newstr(")"));;
+  $$ = $1;
 };
 
 OpenYour:
@@ -760,9 +754,9 @@ SECOND_PERSON_REFLEXIVE {
 
 Question:
 BE Value Comparison Value QuestionSymbol {
-  $$ = cat9(newstr("comp1 = "), $2, newstr(";\n"),
-	    newstr("comp2 = "), $4, newstr(";\n"),
-	    newstr("truth_flag = "), $3, newstr(";\n"));
+  $$ = cat8(newstr("set_left_comp,"), $2, newstr(",\n"),
+	    newstr("set_right_comp,"), $4, newstr(",\n"),
+	    $3, newstr(",\n"));
   free($1);
   free($5);
 }|
@@ -798,27 +792,27 @@ QUESTION_MARK {
 
 Recall:
 RECALL String StatementSymbol {
-  $$ = cat3(newstr("pop("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("pop,\n");
   free($1);
   free($2);
   free($3);
 }|
 RECALL error StatementSymbol {
   report_warning("string");
-  $$ = cat3(newstr("pop("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("pop,\n");
   free($1);
   free($3);
 }|
 RECALL String error {
   report_warning("period or exclamation mark");
-  $$ = cat3(newstr("pop("), int2str(yylineno), newstr(", second_person);\n"));
+  $$ = newstr("pop,\n");
   free($1);
   free($2);
 };
 
 Remember:
 REMEMBER Value StatementSymbol {
-  $$ = cat5(newstr("push("), int2str(yylineno), newstr(", second_person, "), $2, newstr(");\n"));
+  $$ = cat3(newstr("push,"), $2, newstr(",\n"));
   free($1);
   free($3);
 }|
@@ -830,7 +824,7 @@ REMEMBER error StatementSymbol {
 }|
 REMEMBER Value error {
   report_warning("period or exclamation mark");
-  $$ = cat5(newstr("push("), int2str(yylineno), newstr(", second_person, "), $2, newstr(");\n"));
+  $$ = cat3(newstr("push,"), $2, newstr(",\n"));
   free($1);
 };
 
@@ -881,11 +875,11 @@ UnconditionalSentence {
   $$ = $1;
 }|
 Conditional COMMA UnconditionalSentence {
-  $$ = cat5(newstr("if ("), $1, newstr(") {\n"), strindent($3, INDENT), newstr("}\n"));
+  $$ = cat5(newstr("if,"), $1, newstr(",\n"), $3, newstr("endif,\n"));
 }|
 Conditional error UnconditionalSentence {
   report_warning("comma");
-  $$ = cat5(newstr("if ("), $1, newstr(") {\n"), strindent($3, INDENT), newstr("}\n"));
+  $$ = cat5(newstr("if,"), $1, newstr(",\n"), $3, newstr("endif,\n"));
 };
 
 SentenceList:
@@ -906,18 +900,18 @@ Play {
 
 Statement:
 SECOND_PERSON BE Constant StatementSymbol {
-  $$ = cat4(newstr("assign,"), newstr("second_person,"), $3, newstr(",\n"));
+  $$ = cat3(newstr("assign,"), $3, newstr(",\n"));
   free($1);
   free($2);
   free($4);
 }|
 SECOND_PERSON UnarticulatedConstant StatementSymbol {
-  $$ = cat4(newstr("assign,"), newstr("second_person,"), $2, newstr(",\n"));
+  $$ = cat3(newstr("assign,"), $2, newstr(",\n"));
   free($1);
   free($3);
 }|
 SECOND_PERSON BE Equality Value StatementSymbol {
-  $$ = cat4(newstr("assign,"), newstr("second_person,"), $4, newstr(",\n"));
+  $$ = cat3(newstr("assign,"), $4, newstr(",\n"));
   free($1);
   free($2);
   free($3);
@@ -925,7 +919,7 @@ SECOND_PERSON BE Equality Value StatementSymbol {
 }|
 SECOND_PERSON BE Constant error {
   report_warning("period or exclamation mark");
-  $$ = cat4(newstr("assign,"), newstr("second_person,"), $3, newstr(",\n"));
+  $$ = cat3(newstr("assign,"), $3, newstr(",\n"));
   free($1);
   free($2);
 }|
@@ -938,13 +932,13 @@ SECOND_PERSON BE error StatementSymbol {
 }|
 SECOND_PERSON error Constant StatementSymbol {
   report_warning("be");
-  $$ = cat4(newstr("assign,"), newstr("second_person,"), $3, newstr(",\n"));
+  $$ = cat3(newstr("assign,"), $3, newstr(",\n"));
   free($1);
   free($4);
 }|
 SECOND_PERSON UnarticulatedConstant error {
   report_warning("period or exclamation mark");
-  $$ = cat4(newstr("assign,"), newstr("second_person,"), $2, newstr(",\n"));
+  $$ = cat3(newstr("assign,"), $2, newstr(",\n"));
   free($1);
 }|
 SECOND_PERSON error StatementSymbol {
@@ -955,7 +949,7 @@ SECOND_PERSON error StatementSymbol {
 }|
 SECOND_PERSON BE Equality Value error {
   report_warning("period or exclamation mark");
-  $$ = cat4(newstr("assign,"), newstr("second_person,"), $4, newstr(",\n"));
+  $$ = cat3(newstr("assign,"), $4, newstr(",\n"));
   free($1);
   free($2);
   free($3);
@@ -970,14 +964,14 @@ SECOND_PERSON BE Equality error StatementSymbol {
 }|
 SECOND_PERSON BE error Value StatementSymbol {
   report_warning("equality");
-  $$ = cat4(newstr("assign,"), newstr("second_person,"), $4, newstr(",\n"));
+  $$ = cat3(newstr("assign,"), $4, newstr(",\n"));
   free($1);
   free($2);
   free($5);
 }|
 SECOND_PERSON error Equality Value StatementSymbol {
   report_warning("be");
-  $$ = cat4(newstr("assign,"), newstr("second_person,"), $4, newstr(",\n"));
+  $$ = cat3(newstr("assign,"), $4, newstr(",\n"));
   free($1);
   free($3);
   free($5);
@@ -1099,32 +1093,27 @@ NegativeConstant {
 UnaryOperator:
 THE_CUBE_OF {
   $$.list = (char **) malloc(2*sizeof(char **));
-  $$.list[0] = cat3(newstr("int_cube("), int2str(yylineno), newstr(", "));
-  $$.list[1] = newstr(")");
+  $$.list[0] = newstr("cube,");
   free($1);
 }|
 THE_FACTORIAL_OF {
   $$.list = (char **) malloc(2*sizeof(char **));
-  $$.list[0] = cat3(newstr("int_factorial("), int2str(yylineno), newstr(", "));
-  $$.list[1] = newstr(")");
+  $$.list[0] = newstr("factorial,");
   free($1);
 }|
 THE_SQUARE_OF {
   $$.list = (char **) malloc(2*sizeof(char **));
-  $$.list[0] = cat3(newstr("int_square("), int2str(yylineno), newstr(", "));
-  $$.list[1] = newstr(")");
+  $$.list[0] = newstr("square,");
   free($1);
 }|
 THE_SQUARE_ROOT_OF {
   $$.list = (char **) malloc(2*sizeof(char **));
-  $$.list[0] = cat3(newstr("int_sqrt("), int2str(yylineno), newstr(", "));
-  $$.list[1] = newstr(")");
+  $$.list[0] = newstr("sqrt,");
   free($1);
 }|
 TWICE {
   $$.list = (char **) malloc(2*sizeof(char **));
-  $$.list[0] = cat3(newstr("int_twice("), int2str(yylineno), newstr(", "));
-  $$.list[1] = newstr(")");
+  $$.list[0] = newstr("twice,");
   free($1);
 };
 
@@ -1150,36 +1139,34 @@ Statement {
 
 Value:
 CHARACTER {
-  $$ = cat2(str2varname($1), newstr("->value"));
+  $$ = cat2(newstr("value_of,"), str2varname($1));
 }|
 Constant {
   $$ = $1;
 }|
 Pronoun {
-  $$ = cat5(newstr("value_of("), int2str(yylineno), newstr(", "), $1, newstr(")"));
+  $$ = cat2(newstr("value_of,"), $1);
 }|
 BinaryOperator Value AND Value {
-  $$ = cat5($1.list[0], $2, $1.list[1], $4, $1.list[2]);
+  $$ = cat4($1.list[0], $2, $1.list[1], $4);
   free($1.list);
   free($3);
 }|
 UnaryOperator Value {
-  $$ = cat3($1.list[0], $2, $1.list[1]);
-  free($1.list);
+  $$ = cat2($1.list[0], $2);
 }|
 BinaryOperator Value AND error {
   report_error("value");
   $$ = newstr("");
   free($1.list[0]);
   free($1.list[1]);
-  free($1.list[2]);
   free($1.list);
   free($2);
   free($3);
 }|
 BinaryOperator Value error Value {
   report_warning("'and'");
-  $$ = cat5($1.list[0], $2, $1.list[1], $4, $1.list[2]);
+  $$ = cat4($1.list[0], $2, $1.list[1], $4);
   free($1.list);
 }|
 BinaryOperator error AND Value {
@@ -1187,7 +1174,6 @@ BinaryOperator error AND Value {
   $$ = newstr("");
   free($1.list[0]);
   free($1.list[1]);
-  free($1.list[2]);
   free($1.list);
   free($3);
   free($4);
@@ -1196,7 +1182,6 @@ UnaryOperator error {
   report_error("value");
   $$ = newstr("");
   free($1.list[0]);
-  free($1.list[1]);
   free($1.list);
 };
 
