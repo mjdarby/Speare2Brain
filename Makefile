@@ -25,7 +25,7 @@ NAME     = spl
 VERSION  = 1.2.1
 DISTNAME = $(NAME)-$(VERSION)
 
-# compiler commands 
+# compiler commands
 AR      = ar
 CC      = gcc
 LEX     = flex

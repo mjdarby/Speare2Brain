@@ -260,8 +260,7 @@ THE_SUM_OF {
 CharacterDeclaration:
 CHARACTER COMMA Comment EndSymbol {
   $$.list = (char **) malloc(sizeof(char **));
-  $$.list[0] = cat4(str2varname(newstr($1)), newstr(" = initialize_character(\""),
-		    $1, newstr("\");\n"));
+  $$.list[0] = cat2((str2varname(newstr($1))), newstr(",\n"));
   free($2);
   free($4);
 }|
@@ -679,8 +678,9 @@ OPEN error {
 
 Play:
 Title CharacterDeclarationList Act {
-  $$ = cat3($2.list[0],
-	    newstr("\nint comp1, comp2;\n\nglobal_initialize();\n\n"),
+  $$ = cat4(newstr("chars,\n"),
+	    $2.list[0],
+	    newstr("endchars,\n"),
 	    $3);
   free($2.list);
 }|
@@ -701,7 +701,10 @@ Title error Act {
 }|
 error CharacterDeclarationList Act {
   report_warning("title");
-  $$ = cat3($2.list[0], newstr("\n"), $3);
+  $$ = cat4(newstr("chars,\n"),
+	    $2.list[0],
+	    newstr("endchars,\n"),
+	    $3);
   free($2.list);
 };
 

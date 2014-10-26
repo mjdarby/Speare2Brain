@@ -112,7 +112,7 @@ char *newstr(const char *str)
 
   /* copy the strings */
   strcpy(ret, str);
-  
+
   return ret;
 }
 
@@ -187,12 +187,14 @@ char *str2varname(char *str)
 
 char *strip_act(char *str)
 {
-  return str+4;
+  memmove(str, str+4, strlen(str));
+  return str;
 }
 
 char *strip_scene(char *str)
 {
-  return str+6;
+  memmove(str, str+6, strlen(str));
+  return str;
 }
 
 char *strindent(char *str, char *indent)
@@ -210,7 +212,7 @@ char *strindent(char *str, char *indent)
 
   len = strlen(str) + strlen(indent)*newlines + 1;
   newstr = (char *) malloc(len*sizeof(char));
-  
+
   j = 0;
   for (i = 0; str[i] != '\0'; i++) {
     if (i == 0 || str[i - 1] == '\n') {
@@ -230,13 +232,13 @@ char *strindent(char *str, char *indent)
 char *strpad(char *str, int length, char fill)
 {
   int i;
-  
+
   if (strlen(str) >= length) {
     return str;
   }
-  
+
   str = (char *) realloc(str, (length+1)*sizeof(char));
-  
+
   for (i = strlen(str); i < length; i++) {
     str[i] = fill;
   }
