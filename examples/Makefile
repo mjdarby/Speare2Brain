@@ -43,7 +43,7 @@ TARGETS = $(patsubst %.spl, %.nspl, $(wildcard *.spl))
 all: $(TARGETS)
 
 %.nspl: %.spl
-	  $(SPL2C) < $< > $@
+	  $(SPL2NSPL) < $< > $@
 
 # clean-up funtion
 .PHONY: clean

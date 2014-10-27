@@ -908,7 +908,7 @@ SentenceList Sentence {
 StartSymbol:
 Play {
   char *program;
-  program = strindent(newstr($1), INDENT);
+  program = newstr($1);
   printf(program);
   free(program);
 };
