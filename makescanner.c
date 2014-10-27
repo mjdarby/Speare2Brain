@@ -1,5 +1,13 @@
 /***********************************************************************
 
+Speare2Brain, the Shakespeare -> Brainfuck transpiler
+
+Copyright (C) 2014 Matthew Darby
+
+No changes from the original work are present in this file.
+
+Based off the below work and released under the same license as the below:
+
 SPL, the Shakespeare Programming Language
 
 Copyright (C) 2001 Karl Hasselström and Jon Åslund
@@ -41,7 +49,7 @@ int main(int argc, char *argv[])
 {
   char filename[STRING_LENGTH];
   char *include_path;
-  
+
   /* Command line parameters */
   if (argc < 2) {
     include_path = (char *) malloc(sizeof(char)*2);
@@ -55,7 +63,7 @@ int main(int argc, char *argv[])
   /* User code at top of file */
   sprintf(filename, "%s/%s", include_path, "user_code_top.metaflex");
   insert_file(filename);
-  
+
   /* Definitions */
   sprintf(filename, "%s/%s", include_path, "roman_numbers.metaflex");
   insert_file(filename);
@@ -177,7 +185,7 @@ void insert_file(char *filename)
   while((c = getc(file)) != EOF) {
     putchar(c);
   }
-  
+
   fclose(file);
 }
 
@@ -203,7 +211,7 @@ void rules_from_file(char *filename, char *token)
     s = fgets(string, sizeof(string), file);
     if (s == NULL)
       break;
-    
+
     /* Write the rule */
     remove_newline(string);
     rule_for_word(string, token);

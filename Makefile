@@ -1,5 +1,14 @@
 ########################################################################
 #
+# Speare2Brain, the Shakespeare -> Brainfuck transpiler
+#
+# Copyright (C) 2014 Matthew Darby
+#
+# Changes from the original work present in this file:
+#  * Modified Makefile to build the spl2nspl program
+#
+# Based off the below work and released under the same license as the below:
+#
 # SPL, the Shakespeare Programming Language
 #
 # Copyright (C) 2001 Karl Hasselström and Jon Åslund
@@ -26,15 +35,12 @@ VERSION  = 1.2.1
 DISTNAME = $(NAME)-$(VERSION)
 
 # compiler commands
-AR      = ar
 CC      = gcc
 LEX     = flex
-RANLIB  = ranlib
 TAR     = tar
 YACC    = bison
 
 INCLUDEPATH = include
-EDITORPATH  = editor
 EXAMPLEPATH = examples
 
 # source / outputs
@@ -45,8 +51,8 @@ YACCFLAGS = --verbose
 CCFLAGS   = -O2 -Wall -lm
 LEXFLAGS  = -Cem
 
-.PHONY: all clean install libspl tar
-all: install
+.PHONY: all clean install tar
+all: install examples
 
 examples: install
 	$(MAKE) -C $(EXAMPLEPATH) all
@@ -57,18 +63,9 @@ grammar.tab.h grammar.tab.c: grammar.y
 grammar.tab.o: grammar.tab.c grammar.tab.h telma.h
 	$(CC) $(CCFLAGS) -c $<
 
-install: spl2c libspl.a spl.h
-	mkdir -p spl/bin spl/include spl/lib
-	cp -pf spl2c spl/bin
-	cp -pf spl.h spl/include
-	cp -pf libspl.a spl/lib
-
-libspl.a: libspl.o strutils.o
-	$(AR) rc $@ $^
-	$(RANLIB) $@
-
-libspl.o: libspl.c spl.h
-	$(CC) $(CCFLAGS) -c $<
+install: spl2nspl
+	mkdir -p spl/bin
+	cp -pf spl2nspl spl/bin
 
 makescanner: makescanner.o
 	$(CC) $< $(CCFLAGS) -o $@
@@ -85,7 +82,7 @@ scanner.l: makescanner $(MAKESCANNERINCLUDE)
 scanner.o: scanner.c grammar.tab.h telma.h
 	$(CC) $(CCFLAGS) -c $<
 
-spl2c: grammar.tab.o scanner.o strutils.o
+spl2nspl: grammar.tab.o scanner.o strutils.o
 	$(CC) $^ $(CCFLAGS) -lfl -o $@
 
 strutils.o: strutils.c strutils.h
@@ -95,12 +92,11 @@ tar: clean
 	mkdir -p $(DISTNAME)
 	cp `find . -type f -maxdepth 1` $(DISTNAME)
 	cp -r $(INCLUDEPATH) $(DISTNAME)
-	cp -r $(EDITORPATH) $(DISTNAME)
 	cp -r $(EXAMPLEPATH) $(DISTNAME)
 	$(TAR) zcvf $(DISTNAME).tar.gz $(DISTNAME)
 
 # clean-up funtion
 clean:
-	rm -f *~ $(EDITORPATH)/*~ $(INCLUDEPATH)/*~ *.l *.o *.a core grammar.output grammar.tab.h grammar.tab.c scanner.c makescanner spl2c *.tar.gz
+	rm -f *~ \#*\# $(INCLUDEPATH)/*~ *.l *.o *.a core grammar.output grammar.tab.h grammar.tab.c scanner.c makescanner spl2nspl *.tar.gz
 	rm -rf spl $(DISTNAME)
 	$(MAKE) -C $(EXAMPLEPATH) clean

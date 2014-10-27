@@ -1,5 +1,13 @@
 /***********************************************************************
 
+Speare2Brain, the Shakespeare -> Brainfuck transpiler
+
+Copyright (C) 2014 Matthew Darby
+
+No changes from the original work are present in this file.
+
+Based off the below work and released under the same license as the below:
+
 SPL, the Shakespeare Programming Language
 
 Copyright (C) 2001 Karl Hasselström and Jon Åslund

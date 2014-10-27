@@ -5,6 +5,6 @@ Speare2Brain is an ongoing project to develop a Shakespeare to Brainfuck transpi
 
 We'll be ripping out the internals of the original grammar generator to do this, making a mockery of the original project and sacrificing our souls in order to appease the demon lord Ba'al. The end result will be composed of:
 
-* A heavily modified grammar.y, combined with the original SPL source. This will produce spl2nbf, an SPL-to-Not-Brainfuck transpiler. Not-Brainfuck is not Brainfuck.
-* A Python script called nbf2bf for transpiling the Not-Brainfuck to Brainfuck.
+* A heavily modified grammar.y, with some new helper functions in strutils.c. This will produce spl2nspl, an SPL-to-Not-Shakespeare-Programming-Language transpiler. Not-Shakespeare-Programming-Language is not Shakespeare Programming Language.
+* A Python script called nspl2bf for transpiling the nspl to Brainfuck.
 * A wrapper around these called speare2brain.

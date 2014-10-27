@@ -1,3 +1,10 @@
+Authors of the Speare2Brain Shakespeare to Brainfuck transpiler:
+
+Matthew Darby bent the original grammar to his nefarious means and wrote the transpiler
+
+
+Authors of the original Shakespare Programming Language and associated software:
+
 Peter Nillius wrote the example program fibonacci.spl
 Björn Stenberg and Linus Nielsen Feltzing wrote the example program fibonacci2.spl
 Jonas Sjöbergh wrote the example programs shakesbeer.spl and guess.spl

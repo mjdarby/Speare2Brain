@@ -1,3 +1,13 @@
+Speare2Brain News
+=================
+
+0.1 - 27 November, 2014
+
+  Project split from original SPL as much as possible
+
+
+SPL News
+========
 1.2.1 - October 18, 2001
 
   Fixed bug discovered by Nick Estes (not possible to have more than

@@ -1,5 +1,14 @@
 ########################################################################
 #
+# Speare2Brain, the Shakespeare -> Brainfuck transpiler
+#
+# Copyright (C) 2014 Matthew Darby
+#
+# Changes from the original work present in this file:
+#  * Modified Makefile to example files using spl2nspl program
+#
+# Based off the below work and released under the same license as the below:
+#
 # SPL, the Shakespeare Programming Language
 #
 # Copyright (C) 2001 Karl Hasselström and Jon Åslund
@@ -24,28 +33,17 @@
 SPLPATH = ../spl
 
 # compiler commands
-CC    = gcc
-SPL2C = $(SPLPATH)/bin/spl2c
+SPL2NSPL = $(SPLPATH)/bin/spl2nspl
 
-# compiler flags
-CCFLAGS      = -O2 -Wall -Wno-unused
-INCLUDEFLAGS = -I$(SPLPATH)/include
-LDFLAGS      = -L$(SPLPATH)/lib -lm -lspl
 
 # target files
-TARGETS = $(patsubst %.spl, %, $(wildcard *.spl))
+TARGETS = $(patsubst %.spl, %.nspl, $(wildcard *.spl))
 
 .PHONY: all
 all: $(TARGETS)
 
-%: %.o 
-	$(CC) $(CCFLAGS) $^ $(LDFLAGS) -o $@
-
-%.c: %.spl
-	$(SPL2C) < $< > $@
-
-%.o: %.c
-	$(CC) $(CCFLAGS) $(INCLUDEFLAGS) -c $<
+%.nspl: %.spl
+	  $(SPL2C) < $< > $@
 
 # clean-up funtion
 .PHONY: clean

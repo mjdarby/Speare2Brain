@@ -1,5 +1,15 @@
 /***********************************************************************
 
+Speare2Brain, the Shakespeare -> Brainfuck transpiler
+
+Copyright (C) 2014 Matthew Darby
+
+Changes from the original work present in this file:
+* strip_act - Strips the opening 4 characters from the passed string
+* strip_scene - Strips the opening 6 characters from the passed string
+
+Based off the below work and released under the same license as the below:
+
 SPL, the Shakespeare Programming Language
 
 Copyright (C) 2001 Karl Hasselström and Jon Åslund

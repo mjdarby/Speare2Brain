@@ -1,5 +1,17 @@
 /***********************************************************************
 
+Speare2Brain, the Shakespeare -> Brainfuck transpiler
+
+Copyright (C) 2014 Matthew Darby
+
+Changes from the original work present in this file:
+* C code is no longer output, the new target language is NSPL,
+  also known as Not-Shakespeare Programming Language.
+* Constant expressions are evaluated as often as possible
+  rather than being left in the form 2*2*2*2*1 etc.
+
+Based off the work and released under the same license as the below:
+
 SPL, the Shakespeare Programming Language
 
 Copyright (C) 2001 Karl Hasselström and Jon Åslund
