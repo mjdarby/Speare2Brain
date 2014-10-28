@@ -28,7 +28,11 @@ class MemoryLayout:
         self.pointer = 0
         self.copy_register_offset = 0
         self.result_register_offset = 1
-        self.first_character_offset = 2
+        self.on_stage_one_register_offset = 2
+        self.on_stage_two_register_offset = 3
+        self.active_character_register_offset = 4
+        self.second_character_register_offset = 5
+        self.first_character_offset = 6
         self.characters = []
         self.character_to_offset = {}
 
@@ -78,20 +82,31 @@ class MemoryLayout:
 def parse_file(file_text, memory):
     output_brainfuck = ""
     tokens = file_text.split(',')
-    setup_memory_offsets(tokens, memory)
+    idx = 0
+    # The main loop for parsing finds valid tokens and runs the
+    # the associated functions. Each function returns how many
+    # tokens we should skip after we've finished processing.
+    while idx < len(tokens):
+        current_token = tokens[idx]
+        if current_token in token_function_map().keys():
+            idx += token_function_map()[current_token](tokens, memory, idx)
+        else:
+            idx += 1
     return tokens
 
-def setup_memory_offsets(tokens, memory):
+def setup_memory_offsets(tokens, memory, offset):
     """Extract the character array which resides between the chars and
     endchars tokens"""
     character_array = extract_elements_between_tokens(
         tokens,
-        token_pairs()["character"],
-        0)
+        token_pairs()["chars"],
+        offset)
+    if not character_array:
+        raise Exception("No characters found in input NSPL file, aborting")
     for character in character_array:
         memory.add_character(character)
     memory.finalise_characters()
-    pass
+    return 2 + len(character_array)
 
 def extract_elements_between_tokens(tokens, token_pair, offset):
     """Starting from the offset element of the tokens array, find all
@@ -107,8 +122,12 @@ def extract_elements_between_tokens(tokens, token_pair, offset):
         elements = reg_match.group(1)
     return elements.split(",")
 
+def token_function_map():
+    function_map = {"chars": setup_memory_offsets}
+    return function_map
+
 def token_pairs():
-    pairs_map = {"character": ["chars", "endchars"]}
+    pairs_map = {"chars": ["chars", "endchars"]}
     return pairs_map
 
 if __name__ == "__main__":
