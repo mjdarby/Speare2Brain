@@ -141,6 +141,108 @@ def enter_characters(tokens, memory, offset):
         stage_offset += 1
     return [output_brainfuck, 2 + len(character_array)]
 
+def exit_characters(tokens, memory, offset):
+    """Returns the Brainfuck required to remove all characters
+    from the character registers"""
+    output_brainfuck = ""
+    character_array = extract_elements_between_tokens(
+        tokens,
+        token_pairs()["exit_scene_multiple"],
+        offset)
+    if not (len(character_array) == 2 or len(character_array) == 0):
+        raise Exception("Wrong number of characters provided")
+    stage_offset = memory.on_stage_one_register_offset
+    # Move to the OS1 + OS2 registers, wipe out the current value if
+    # necessary and replace them with the index of the new characters
+    # on stage
+    output_brainfuck += memory.move_pointer_to_offset(stage_offset)
+    output_brainfuck += "[-]"
+    output_brainfuck += memory.reset_pointer()
+    stage_offset += 1
+    output_brainfuck += memory.move_pointer_to_offset(stage_offset)
+    output_brainfuck += "[-]"
+    output_brainfuck += memory.reset_pointer()
+    return [output_brainfuck, 2 + len(character_array)]
+
+def enter_character(tokens, memory, offset):
+    """Returns the Brainfuck required to load the given character into
+    the empty character register"""
+    output_brainfuck = ""
+    new_character = extract_next_elements(tokens, 2, offset)[1]
+    new_character_offset = memory.character_to_offset[new_character]
+    stage_offset = memory.on_stage_one_register_offset
+    result_register_offset = memory.result_register_offset
+    copy_register_offset = memory.copy_register_offset
+    loop_register_offset = memory.loop_register_offset
+
+    # There must be at least one empty space for the character to join.
+    # We'll assume that if it isn't OS1, it must be OS2.
+    # Reset result
+    output_brainfuck += memory.move_pointer_to_offset(result_register_offset)
+    output_brainfuck += "[-]"
+    output_brainfuck += memory.reset_pointer()
+
+    # If OS1 == 0, fill it with the character and set Result to 1
+    # Idiom for 'if equal to 0:
+    #  <set non-zero register to 1><test register>
+    #  [<set not-zero register to 0>]<test non-zero register>[<code>]
+    output_brainfuck += memory.move_pointer_to_offset(result_register_offset)
+    output_brainfuck += "+" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(stage_offset)
+    output_brainfuck += "[" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(result_register_offset)
+    output_brainfuck += "-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        stage_offset)
+    # Escape loop with Loop trick
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        loop_register_offset)
+    output_brainfuck += "+" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        stage_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        stage_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+
+    # Restore OS1
+    output_brainfuck += memory.move_pointer_to_offset(
+        loop_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        stage_offset)
+    output_brainfuck += "+" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        loop_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+
+    # If Result is not zero, OS1 is empty and needs to be filled
+    # Use the copy register to keep track of the fact we entered this loop
+    # If copy is zero, don't copy into OS2 instead
+    output_brainfuck += memory.move_pointer_to_offset(copy_register_offset)
+    output_brainfuck += "[-]+" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(result_register_offset)
+    output_brainfuck += "[" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(stage_offset)
+    output_brainfuck += "+" * new_character_offset + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(copy_register_offset)
+    output_brainfuck += "-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(result_register_offset)
+    output_brainfuck += "-]" + memory.reset_pointer()
+
+    # If the above didn't execute, Copy contains 1.
+    stage_offset += 1
+    output_brainfuck += memory.move_pointer_to_offset(copy_register_offset)
+    output_brainfuck += "[" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(stage_offset)
+    output_brainfuck += "+" * new_character_offset + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(copy_register_offset)
+    output_brainfuck += "-]" + memory.reset_pointer()
+
+    # Final result: Copy 0, Result 0, OS1 or OS2 filled with new offset
+    return [output_brainfuck, 2]
+
 def activate_character(tokens, memory, offset):
     """Returns the brainfuck for moving the given character into the
     active character register, also moving the other character into the
@@ -340,18 +442,25 @@ def extract_elements_between_tokens(tokens, token_pair, offset):
     reg_match = re.match(reg_exp, string_to_search)
     if reg_match:
         elements = reg_match.group(1)
-    return elements.split(",")
+        elements = elements.split(",")
+    else:
+        elements = []
+    return elements
 
 def token_function_map():
     function_map = {"chars": setup_memory_offsets,
                     "enter_scene_multiple": enter_characters,
+                    "exit_scene_multiple": exit_characters,
+                    "enter_scene": enter_character,
                     "activate": activate_character}
     return function_map
 
 def token_pairs():
     pairs_map = {"chars": ["chars", "endchars"],
                  "enter_scene_multiple": ["enter_scene_multiple",
-                                          "end_enter_scene_multiple"]}
+                                          "end_enter_scene_multiple"],
+                 "exit_scene_multiple": ["exit_scene_multiple",
+                                         "end_exit_scene_multiple"]}
     return pairs_map
 
 if __name__ == "__main__":
