@@ -78,6 +78,33 @@ class MemoryLayout:
         self.pointer = offset
         return ">" * offset
 
+    def zero_value_at_offset(self, offset):
+        """Outputs the Brainfuck commands to zero the value at a given
+        offset and reset the pointer."""
+        output_brainfuck = ""
+        output_brainfuck += self.move_pointer_to_offset(offset)
+        output_brainfuck += "[-]"
+        output_brainfuck += self.reset_pointer()
+        return output_brainfuck
+
+    def add_value_at_offset(self, value, offset):
+        """Outputs the Brainfuck commands to zero the value at a given
+        offset and reset the pointer."""
+        output_brainfuck = ""
+        output_brainfuck += self.move_pointer_to_offset(offset)
+        output_brainfuck += "+" * value
+        output_brainfuck += self.reset_pointer()
+        return output_brainfuck
+
+    def subtract_value_at_offset(self, value, offset):
+        """Outputs the Brainfuck commands to zero the value at a given
+        offset and reset the pointer."""
+        output_brainfuck = ""
+        output_brainfuck += self.move_pointer_to_offset(offset)
+        output_brainfuck += "-" * value
+        output_brainfuck += self.reset_pointer()
+        return output_brainfuck
+
     def reset_pointer(self):
         """Returns the Brainfuck command required to move the pointer
         back to the 0 position. Needs to be called after you are
@@ -239,6 +266,50 @@ def enter_character(tokens, memory, offset):
     output_brainfuck += "+" * new_character_offset + memory.reset_pointer()
     output_brainfuck += memory.move_pointer_to_offset(copy_register_offset)
     output_brainfuck += "-]" + memory.reset_pointer()
+
+    # Final result: Copy 0, Result 0, OS1 or OS2 filled with new offset
+    return [output_brainfuck, 2]
+
+def exit_character(tokens, memory, offset):
+    """Returns the Brainfuck required to remove the given character from
+    the stage."""
+    output_brainfuck = ""
+    character = extract_next_elements(tokens, 2, offset)[1]
+    character_offset = memory.character_to_offset[character]
+    stage_one_offset = memory.on_stage_one_register_offset
+    stage_two_offset = memory.on_stage_two_register_offset
+    loop_register_offset = memory.loop_register_offset
+
+    # We'll first try and remove the character from OS1
+    # If there's still a non-zero value in OS1, we will
+    # restore OS1 and delete OS2 instead.
+    output_brainfuck += memory.subtract_value_at_offset(character_offset,
+                                                        stage_one_offset)
+    output_brainfuck += memory.move_pointer_to_offset(stage_one_offset)
+    output_brainfuck += "[" + memory.reset_pointer()
+    output_brainfuck += memory.subtract_value_at_offset(character_offset,
+                                                        stage_two_offset)
+    output_brainfuck += memory.add_value_at_offset(character_offset,
+                                                   stage_one_offset)
+    output_brainfuck += memory.move_pointer_to_offset(stage_one_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(loop_register_offset)
+    output_brainfuck += "+" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(stage_one_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(stage_one_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+
+    # Restore OS1
+    output_brainfuck += memory.move_pointer_to_offset(
+        loop_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(stage_one_offset)
+    output_brainfuck += "+" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        loop_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+
 
     # Final result: Copy 0, Result 0, OS1 or OS2 filled with new offset
     return [output_brainfuck, 2]
@@ -452,6 +523,7 @@ def token_function_map():
                     "enter_scene_multiple": enter_characters,
                     "exit_scene_multiple": exit_characters,
                     "enter_scene": enter_character,
+                    "exit_scene": exit_character,
                     "activate": activate_character}
     return function_map
 

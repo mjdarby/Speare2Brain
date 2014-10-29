@@ -423,7 +423,7 @@ LEFT_BRACKET EXEUNT CharacterList RIGHT_BRACKET {
   free($4);
 }|
 LEFT_BRACKET EXEUNT RIGHT_BRACKET {
-  $$ = newstr("exit_scene_all,\n");
+  $$ = newstr("exit_scene_multiple,end_exit_scene_multiple,\n");
   free($1);
   free($2);
   free($3);
