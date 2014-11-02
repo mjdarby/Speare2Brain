@@ -29,11 +29,12 @@ class MemoryLayout:
         self.copy_register_offset = 0
         self.result_register_offset = 1
         self.loop_register_offset = 2
-        self.on_stage_one_register_offset = 3
-        self.on_stage_two_register_offset = 4
-        self.active_character_register_offset = 5
-        self.second_character_register_offset = 6
-        self.first_character_offset = 7
+        self.retrieve_register_offset = 3
+        self.on_stage_one_register_offset = 4
+        self.on_stage_two_register_offset = 5
+        self.active_character_register_offset = 6
+        self.second_character_register_offset = 7
+        self.first_character_offset = 8
         self.characters = []
         self.character_to_offset = {}
 
@@ -71,6 +72,124 @@ class MemoryLayout:
             print("Error: Character does not exist: " + character_name,
                   file=sys.stderr)
             raise
+
+    def copy_register(self, source_register_offset, destination_register_offset):
+        """Outputs the Brainfuck commands to copy a value between
+        registers. Will assume Copy is empty."""
+        # Move the source value to the destination and copy registers
+        output_brainfuck = self.zero_value_at_offset(self.copy_register_offset)
+        output_brainfuck += self.move_pointer_to_offset(source_register_offset)
+        output_brainfuck += "[-" + self.reset_pointer()
+        output_brainfuck += self.move_pointer_to_offset(
+            destination_register_offset)
+        output_brainfuck += "+" + self.reset_pointer()
+        output_brainfuck += self.move_pointer_to_offset(
+            self.copy_register_offset)
+        output_brainfuck += "+" + self.reset_pointer()
+        output_brainfuck += self.move_pointer_to_offset(
+            source_register_offset) + "]"
+        output_brainfuck += self.reset_pointer()
+        # Copy back
+        output_brainfuck += self.move_pointer_to_offset(
+            self.copy_register_offset)
+        output_brainfuck += "[-" + self.reset_pointer()
+        output_brainfuck += self.move_pointer_to_offset(
+            source_register_offset)
+        output_brainfuck += "+" + self.reset_pointer()
+        output_brainfuck += self.move_pointer_to_offset(
+            self.copy_register_offset) + "]"
+        output_brainfuck += self.reset_pointer()
+        return output_brainfuck
+
+    def copy_from_second_character_register(self,
+                                destination_register_offset):
+        """Copies the content of the second characters's register into
+        a destination register via addition. Assumes Copy will be zero.
+        Same for Loop."""
+        retrieve_register_offset = self.retrieve_register_offset
+        loop_register_offset = self.loop_register_offset
+
+        output_brainfuck = ""
+        # Setup our Copy and Loop registers, Loop will be made zero
+        # once we enter the inner loop
+        output_brainfuck += self.copy_register(
+            self.second_character_register_offset,
+            self.retrieve_register_offset)
+        output_brainfuck += self.add_value_at_offset(
+            1,
+            self.loop_register_offset)
+        output_brainfuck += self.move_pointer_to_offset(retrieve_register_offset)
+
+        inner_brainfuck = ""
+        for character in self.characters[::-1]:
+            # Relies off the first character in the array holding the
+            # first position in memory, etc.
+            temp_brainfuck = ""
+            temp_brainfuck += "[-" + inner_brainfuck
+            temp_brainfuck += "<" * retrieve_register_offset
+            self.pointer = 0 # Ick.
+            # The first time we reach here, it's because we either hit
+            # the bottom bottom or skipped an inner loop.
+            temp_brainfuck += self.move_pointer_to_offset(loop_register_offset)
+            temp_brainfuck += "[-" # If this is the first time in, decrement Loop
+            temp_brainfuck += self.reset_pointer()
+            temp_brainfuck += self.copy_register(
+                self.character_to_offset[character],
+                destination_register_offset)
+            temp_brainfuck += self.move_pointer_to_offset(loop_register_offset)
+            temp_brainfuck += "]"
+            temp_brainfuck += self.reset_pointer()
+            temp_brainfuck += self.move_pointer_to_offset(retrieve_register_offset)
+            temp_brainfuck += "]"
+            inner_brainfuck = temp_brainfuck
+            self.pointer = 0 # Hacks! HACKS
+        output_brainfuck += inner_brainfuck + "<" * retrieve_register_offset
+        return output_brainfuck
+
+    def copy_from_second_character_register(self,
+                                source_register_offset):
+        """Copies the content of the source register into
+        the second characters's register via addition. Assumes Copy will
+        be zero. Same for Loop."""
+        retrieve_register_offset = self.retrieve_register_offset
+        loop_register_offset = self.loop_register_offset
+
+        output_brainfuck = ""
+        # Setup our Copy and Loop registers, Loop will be made zero
+        # once we enter the inner loop
+        output_brainfuck += self.copy_register(
+            self.second_character_register_offset,
+            self.retrieve_register_offset)
+        output_brainfuck += self.add_value_at_offset(
+            1,
+            self.loop_register_offset)
+        output_brainfuck += self.move_pointer_to_offset(retrieve_register_offset)
+
+        inner_brainfuck = ""
+        for character in self.characters[::-1]:
+            # Relies off the first character in the array holding the
+            # first position in memory, etc.
+            temp_brainfuck = ""
+            temp_brainfuck += "[-" + inner_brainfuck
+            temp_brainfuck += "<" * retrieve_register_offset
+            self.pointer = 0 # Ick.
+            # The first time we reach here, it's because we either hit
+            # the bottom bottom or skipped an inner loop.
+            temp_brainfuck += self.move_pointer_to_offset(loop_register_offset)
+            temp_brainfuck += "[-" # If this is the first time in, decrement Loop
+            temp_brainfuck += self.reset_pointer()
+            temp_brainfuck += self.copy_register(
+                source_register_offset,
+                self.character_to_offset[character])
+            temp_brainfuck += self.move_pointer_to_offset(loop_register_offset)
+            temp_brainfuck += "]"
+            temp_brainfuck += self.reset_pointer()
+            temp_brainfuck += self.move_pointer_to_offset(retrieve_register_offset)
+            temp_brainfuck += "]"
+            inner_brainfuck = temp_brainfuck
+            self.pointer = 0 # Hacks! HACKS
+        output_brainfuck += inner_brainfuck + "<" * retrieve_register_offset
+        return output_brainfuck
 
     def move_pointer_to_offset(self, offset):
         """Outputs the required Brainfuck commands to move to the
@@ -163,7 +282,7 @@ def enter_characters(tokens, memory, offset):
         # on stage
         output_brainfuck += memory.move_pointer_to_offset(stage_offset)
         output_brainfuck += "[-]"
-        output_brainfuck += "+" * memory.character_to_offset[character]
+        output_brainfuck += "+" * (memory.characters.index(character) + 1)
         output_brainfuck += memory.reset_pointer()
         stage_offset += 1
     return [output_brainfuck, 2 + len(character_array)]
@@ -196,7 +315,7 @@ def enter_character(tokens, memory, offset):
     the empty character register"""
     output_brainfuck = ""
     new_character = extract_next_elements(tokens, 2, offset)[1]
-    new_character_offset = memory.character_to_offset[new_character]
+    new_character_offset = memory.characters.index(new_character) + 1
     stage_offset = memory.on_stage_one_register_offset
     result_register_offset = memory.result_register_offset
     copy_register_offset = memory.copy_register_offset
@@ -275,7 +394,7 @@ def exit_character(tokens, memory, offset):
     the stage."""
     output_brainfuck = ""
     character = extract_next_elements(tokens, 2, offset)[1]
-    character_offset = memory.character_to_offset[character]
+    character_offset = memory.characters.index(character) + 1
     stage_one_offset = memory.on_stage_one_register_offset
     stage_two_offset = memory.on_stage_two_register_offset
     loop_register_offset = memory.loop_register_offset
@@ -320,7 +439,7 @@ def activate_character(tokens, memory, offset):
     second person register if present"""
     output_brainfuck = ""
     active_character = extract_next_elements(tokens, 2, offset)[1]
-    active_character_offset = memory.character_to_offset[active_character]
+    active_character_offset = memory.characters.index(active_character) + 1
     result_register_offset = memory.result_register_offset
     active_character_register_offset = memory.active_character_register_offset
     second_character_register_offset = memory.second_character_register_offset
@@ -496,6 +615,11 @@ def activate_character(tokens, memory, offset):
     output_brainfuck += "[-]" + memory.reset_pointer()
     return [output_brainfuck, 2]
 
+def copy_test(tokens, memory, offset):
+    output_brainfuck = memory.copy_from_second_character_register(
+        memory.result_register_offset)
+    return [output_brainfuck, 1]
+
 def extract_next_elements(tokens, number_of_elements, offset):
     """Starting from the offset element of the tokens array, extract the
     next N elements."""
@@ -524,7 +648,8 @@ def token_function_map():
                     "exit_scene_multiple": exit_characters,
                     "enter_scene": enter_character,
                     "exit_scene": exit_character,
-                    "activate": activate_character}
+                    "activate": activate_character,
+                    "copy_test": copy_test}
     return function_map
 
 def token_pairs():
