@@ -242,35 +242,35 @@ THE_DIFFERENCE_BETWEEN {
   $$.list = (char **) malloc(3*sizeof(char **));
   $$.list[0] = newstr("sub,");
   $$.list[1] = newstr("");
-  $$.list[2] = newstr("endsub,");
+  $$.list[2] = newstr("end_sub,");
   free($1);
 }|
 THE_PRODUCT_OF {
   $$.list = (char **) malloc(3*sizeof(char **));
   $$.list[0] = newstr("mul,");
   $$.list[1] = newstr("");
-  $$.list[2] = newstr("endmul,");
+  $$.list[2] = newstr("end_mul,");
   free($1);
 }|
 THE_QUOTIENT_BETWEEN {
   $$.list = (char **) malloc(3*sizeof(char **));
   $$.list[0] = newstr("div,");
   $$.list[1] = newstr("");
-  $$.list[2] = newstr("enddiv,");
+  $$.list[2] = newstr("end_div,");
   free($1);
 }|
 THE_REMAINDER_OF_THE_QUOTIENT_BETWEEN {
   $$.list = (char **) malloc(3*sizeof(char **));
   $$.list[0] = newstr("mod,");
   $$.list[1] = newstr("");
-  $$.list[2] = newstr("endmod,");
+  $$.list[2] = newstr("end_mod,");
   free($1);
 }|
 THE_SUM_OF {
   $$.list = (char **) malloc(3*sizeof(char **));
   $$.list[0] = newstr("add,");
   $$.list[1] = newstr("");
-  $$.list[2] = newstr("endadd,");
+  $$.list[2] = newstr("end_add,");
   free($1);
 };
 
@@ -922,18 +922,18 @@ Play {
 
 Statement:
 SECOND_PERSON BE Constant StatementSymbol {
-  $$ = cat3(newstr("assign,"), $3, newstr("endassign,\n"));
+  $$ = cat3(newstr("assign,"), $3, newstr("end_assign,\n"));
   free($1);
   free($2);
   free($4);
 }|
 SECOND_PERSON UnarticulatedConstant StatementSymbol {
-  $$ = cat3(newstr("assign,"), $2, newstr("endassign,\n"));
+  $$ = cat3(newstr("assign,"), $2, newstr("end_assign,\n"));
   free($1);
   free($3);
 }|
 SECOND_PERSON BE Equality Value StatementSymbol {
-  $$ = cat3(newstr("assign,"), $4, newstr("endassign,\n"));
+  $$ = cat3(newstr("assign,"), $4, newstr("end_assign,\n"));
   free($1);
   free($2);
   free($3);
@@ -941,7 +941,7 @@ SECOND_PERSON BE Equality Value StatementSymbol {
 }|
 SECOND_PERSON BE Constant error {
   report_warning("period or exclamation mark");
-  $$ = cat3(newstr("assign,"), $3, newstr("endassign,\n"));
+  $$ = cat3(newstr("assign,"), $3, newstr("end_assign,\n"));
   free($1);
   free($2);
 }|
@@ -954,13 +954,13 @@ SECOND_PERSON BE error StatementSymbol {
 }|
 SECOND_PERSON error Constant StatementSymbol {
   report_warning("be");
-  $$ = cat3(newstr("assign,"), $3, newstr("endassign,\n"));
+  $$ = cat3(newstr("assign,"), $3, newstr("end_assign,\n"));
   free($1);
   free($4);
 }|
 SECOND_PERSON UnarticulatedConstant error {
   report_warning("period or exclamation mark");
-  $$ = cat3(newstr("assign,"), $2, newstr("endassign,\n"));
+  $$ = cat3(newstr("assign,"), $2, newstr("end_assign,\n"));
   free($1);
 }|
 SECOND_PERSON error StatementSymbol {
@@ -971,7 +971,7 @@ SECOND_PERSON error StatementSymbol {
 }|
 SECOND_PERSON BE Equality Value error {
   report_warning("period or exclamation mark");
-  $$ = cat3(newstr("assign,"), $4, newstr("endassign,\n"));
+  $$ = cat3(newstr("assign,"), $4, newstr("end_assign,\n"));
   free($1);
   free($2);
   free($3);
@@ -986,14 +986,14 @@ SECOND_PERSON BE Equality error StatementSymbol {
 }|
 SECOND_PERSON BE error Value StatementSymbol {
   report_warning("equality");
-  $$ = cat3(newstr("assign,"), $4, newstr("endassign,\n"));
+  $$ = cat3(newstr("assign,"), $4, newstr("end_assign,\n"));
   free($1);
   free($2);
   free($5);
 }|
 SECOND_PERSON error Equality Value StatementSymbol {
   report_warning("be");
-  $$ = cat3(newstr("assign,"), $4, newstr("endassign,\n"));
+  $$ = cat3(newstr("assign,"), $4, newstr("end_assign,\n"));
   free($1);
   free($3);
   free($5);
@@ -1088,26 +1088,26 @@ UnarticulatedConstant:
 PositiveConstant {
   char buffer[128];
   if (strlen($1) == 1) {
-    sprintf(buffer, "%d,", 1);
+    sprintf(buffer, "const,%d,", 1);
   } else if (strlen($1) % 2 == 0) {
     int power = (strlen($1) - 2) / 2;
-    sprintf(buffer, "%d,", (int)-(pow(2,power)));
+    sprintf(buffer, "const,%d,", (int)-(pow(2,power)));
   } else {
     int power = (strlen($1) - 1) / 2;
-    sprintf(buffer, "%d,", (int)(pow(2,power)));
+    sprintf(buffer, "const,%d,", (int)(pow(2,power)));
   }
   $$ = newstr(buffer);
 }|
 NegativeConstant {
   char buffer[128];
   if (strlen($1) == 4) {
-    sprintf(buffer, "%d,", -1);
+    sprintf(buffer, "const,%d,", -1);
   } else if (strlen($1) % 2 == 0) {
     int power = (strlen($1) - 4) / 2;
-    sprintf(buffer, "%d,", (int)-(pow(2,power)));
+    sprintf(buffer, "const,%d,", (int)-(pow(2,power)));
   } else {
     int power = (strlen($1) - 3) / 2;
-    sprintf(buffer, "%d,", (int)(pow(2,power)));
+    sprintf(buffer, "const,%d,", (int)(pow(2,power)));
   }
   $$ = newstr(buffer);
 };
@@ -1116,31 +1116,31 @@ UnaryOperator:
 THE_CUBE_OF {
   $$.list = (char **) malloc(2*sizeof(char **));
   $$.list[0] = newstr("cube,");
-  $$.list[1] = newstr("endcube,");
+  $$.list[1] = newstr("end_cube,");
   free($1);
 }|
 THE_FACTORIAL_OF {
   $$.list = (char **) malloc(2*sizeof(char **));
   $$.list[0] = newstr("factorial,");
-  $$.list[1] = newstr("endfactorial,");
+  $$.list[1] = newstr("end_factorial,");
   free($1);
 }|
 THE_SQUARE_OF {
   $$.list = (char **) malloc(2*sizeof(char **));
   $$.list[0] = newstr("square,");
-  $$.list[1] = newstr("endsquare,");
+  $$.list[1] = newstr("end_square,");
   free($1);
 }|
 THE_SQUARE_ROOT_OF {
   $$.list = (char **) malloc(2*sizeof(char **));
   $$.list[0] = newstr("sqrt,");
-  $$.list[1] = newstr("endsqrt,");
+  $$.list[1] = newstr("end_sqrt,");
   free($1);
 }|
 TWICE {
   $$.list = (char **) malloc(2*sizeof(char **));
   $$.list[0] = newstr("twice,");
-  $$.list[1] = newstr("endtwice,");
+  $$.list[1] = newstr("end_twice,");
   free($1);
 };
 

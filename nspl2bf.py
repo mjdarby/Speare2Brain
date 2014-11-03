@@ -30,11 +30,13 @@ class MemoryLayout:
         self.result_register_offset = 1
         self.loop_register_offset = 2
         self.retrieve_register_offset = 3
-        self.on_stage_one_register_offset = 4
-        self.on_stage_two_register_offset = 5
-        self.active_character_register_offset = 6
-        self.second_character_register_offset = 7
-        self.first_character_offset = 8
+        self.left_register_offset = 4
+        self.right_register_offset = 5
+        self.on_stage_one_register_offset = 6
+        self.on_stage_two_register_offset = 7
+        self.active_character_register_offset = 8
+        self.second_character_register_offset = 9
+        self.first_character_offset = 10
         self.characters = []
         self.character_to_offset = {}
 
@@ -102,55 +104,53 @@ class MemoryLayout:
         return output_brainfuck
 
     def copy_from_second_character_register(self,
-                                destination_register_offset):
+                                            destination_register_offset):
         """Copies the content of the second characters's register into
         a destination register via addition. Assumes Copy will be zero.
         Same for Loop."""
-        retrieve_register_offset = self.retrieve_register_offset
-        loop_register_offset = self.loop_register_offset
+        copy_function = lambda source, dest: self.copy_register(dest, source)
+        output_brainfuck = self.copy_second_character_skeleton(
+            destination_register_offset,
+            copy_function)
 
-        output_brainfuck = ""
-        # Setup our Copy and Loop registers, Loop will be made zero
-        # once we enter the inner loop
-        output_brainfuck += self.copy_register(
-            self.second_character_register_offset,
-            self.retrieve_register_offset)
-        output_brainfuck += self.add_value_at_offset(
-            1,
-            self.loop_register_offset)
-        output_brainfuck += self.move_pointer_to_offset(retrieve_register_offset)
-
-        inner_brainfuck = ""
-        for character in self.characters[::-1]:
-            # Relies off the first character in the array holding the
-            # first position in memory, etc.
-            temp_brainfuck = ""
-            temp_brainfuck += "[-" + inner_brainfuck
-            temp_brainfuck += "<" * retrieve_register_offset
-            self.pointer = 0 # Ick.
-            # The first time we reach here, it's because we either hit
-            # the bottom bottom or skipped an inner loop.
-            temp_brainfuck += self.move_pointer_to_offset(loop_register_offset)
-            temp_brainfuck += "[-" # If this is the first time in, decrement Loop
-            temp_brainfuck += self.reset_pointer()
-            temp_brainfuck += self.copy_register(
-                self.character_to_offset[character],
-                destination_register_offset)
-            temp_brainfuck += self.move_pointer_to_offset(loop_register_offset)
-            temp_brainfuck += "]"
-            temp_brainfuck += self.reset_pointer()
-            temp_brainfuck += self.move_pointer_to_offset(retrieve_register_offset)
-            temp_brainfuck += "]"
-            inner_brainfuck = temp_brainfuck
-            self.pointer = 0 # Hacks! HACKS
-        output_brainfuck += inner_brainfuck + "<" * retrieve_register_offset
         return output_brainfuck
 
-    def copy_from_second_character_register(self,
-                                source_register_offset):
+    def copy_into_second_character_register(self,
+                                            source_register_offset):
         """Copies the content of the source register into
         the second characters's register via addition. Assumes Copy will
         be zero. Same for Loop."""
+        copy_function = lambda source, dest: self.copy_register(source, dest)
+        output_brainfuck = self.copy_second_character_skeleton(
+            source_register_offset,
+            copy_function)
+
+        return output_brainfuck
+
+    def output_second_character_register(self):
+        """Outputs the content of the source register"""
+        copy_function = lambda source, dest: (
+            self.move_pointer_to_offset(dest) + "." + self.reset_pointer())
+        output_brainfuck = self.copy_second_character_skeleton(
+            0,
+            copy_function)
+
+        return output_brainfuck
+
+    def reset_second_character_register(self):
+        """Resets the content of the source register"""
+        copy_function = lambda source, dest: (
+            self.move_pointer_to_offset(dest) + "[-]" + self.reset_pointer())
+        output_brainfuck = self.copy_second_character_skeleton(
+            0,
+            copy_function)
+
+        return output_brainfuck
+
+    def copy_second_character_skeleton(self,
+                                       register, copy_function):
+        """Provides the skeleton code for copying into/from the second
+        character"""
         retrieve_register_offset = self.retrieve_register_offset
         loop_register_offset = self.loop_register_offset
 
@@ -178,8 +178,8 @@ class MemoryLayout:
             temp_brainfuck += self.move_pointer_to_offset(loop_register_offset)
             temp_brainfuck += "[-" # If this is the first time in, decrement Loop
             temp_brainfuck += self.reset_pointer()
-            temp_brainfuck += self.copy_register(
-                source_register_offset,
+            temp_brainfuck += copy_function(
+                register,
                 self.character_to_offset[character])
             temp_brainfuck += self.move_pointer_to_offset(loop_register_offset)
             temp_brainfuck += "]"
@@ -615,10 +615,213 @@ def activate_character(tokens, memory, offset):
     output_brainfuck += "[-]" + memory.reset_pointer()
     return [output_brainfuck, 2]
 
-def copy_test(tokens, memory, offset):
-    output_brainfuck = memory.copy_from_second_character_register(
-        memory.result_register_offset)
+def output_character(tokens, memory, offset):
+    """Returns the brainfuck for outputing in ASCII the value in the
+    Second character's register"""
+    output_brainfuck = memory.output_second_character_register()
     return [output_brainfuck, 1]
+
+def breakpoint(tokens, memory, offset):
+    """Returns the brainfuck for entering a debug state in some
+    BF interpreters"""
+    output_brainfuck = "#"
+    return [output_brainfuck, 1]
+
+def assign(tokens, memory, offset):
+    """Returns the brainfuck for resetting the Result register before
+    evaluating the internal expressions and assigning the result
+    to the character referenced in the Second register."""
+    expression_array = extract_elements_between_tokens(
+        tokens,
+        token_pairs()["assign"],
+        offset)
+    output_brainfuck = ""
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.result_register_offset)
+    # Do the expression evaluation, not fun..
+    output_brainfuck += evaluate_expression(memory.result_register_offset,
+                                            tokens,
+                                            memory,
+                                            offset+1)[0]
+
+    # Put Result into the Second character's register after resetting
+    output_brainfuck += memory.reset_second_character_register()
+    output_brainfuck += memory.copy_into_second_character_register(
+        memory.result_register_offset)
+    return [output_brainfuck, len(expression_array) + 2]
+
+# Binary and unary functions will destroy Left and Right during
+# processing
+def add_expression(target_register, memory):
+    # Add Right to Left and jam it in the target register
+    output_brainfuck = ""
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.left_register_offset)
+    output_brainfuck += "+" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    if (target_register != memory.left_register_offset):
+        output_brainfuck += memory.copy_register(memory.left_register_offset,
+                                                 target_register)
+    return output_brainfuck
+def sub_expression(target_register, memory):
+    # Subtract Right from Left and jam it in the target register
+    output_brainfuck = ""
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.left_register_offset)
+    output_brainfuck += "-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    if (target_register != memory.left_register_offset):
+        output_brainfuck += memory.copy_register(memory.left_register_offset,
+                                                 target_register)
+    return output_brainfuck
+def mul_expression(target_register, memory):
+    output_brainfuck = ""
+    return output_brainfuck
+def mod_expression(target_register, memory):
+    output_brainfuck = ""
+    return output_brainfuck
+def div_expression(target_register, memory):
+    output_brainfuck = ""
+    return output_brainfuck
+def cube_expression(target_register, memory):
+    output_brainfuck = ""
+    return output_brainfuck
+def factorial_expression(target_register, memory):
+    output_brainfuck = ""
+    return output_brainfuck
+def square_expression(target_register, memory):
+    output_brainfuck = ""
+    return output_brainfuck
+def sqrt_expression(target_register, memory):
+    output_brainfuck = ""
+    return output_brainfuck
+def twice_expression(target_register, memory):
+    output_brainfuck = ""
+    return output_brainfuck
+def value_of_expression(target_register,
+                        tokens,
+                        memory,
+                        offset):
+    character = extract_next_elements(tokens, 2, offset)[1]
+    output_brainfuck = ""
+    if character == "second_person":
+        output_brainfuck += memory.copy_from_second_character_register(
+            target_register)
+    else:
+        character_register = memory.character_to_offset[character]
+        output_brainfuck += memory.copy_register(character_register,
+                                                target_register)
+    return output_brainfuck
+def const_expression(target_register,
+                     tokens,
+                     memory,
+                     offset):
+    value = int(extract_next_elements(tokens, 2, offset)[1])
+    sign = "+" if value > 0 else "-"
+    value = value if value > 0 else -value
+    output_brainfuck = ""
+    output_brainfuck += memory.move_pointer_to_offset(target_register)
+    output_brainfuck += sign * value
+    output_brainfuck += memory.reset_pointer()
+    return output_brainfuck
+
+def evaluate_expression(target_register, tokens, memory, offset):
+    """Returns the brainfuck for evaluating an expression and moving
+    the result into Result."""
+    output_brainfuck = ""
+    # We need to figure out which order we have to evaluate the
+    # expressions in to avoid clobbering any values.
+    # For binary operations, we can load each argument into a register
+    # but this gets hard if each argument is a binary operation itself.
+    # We'll use a third register to hold one of the results if necessary.
+
+    # Pluck off the top token and evaluate its arguments and slam them
+    # into the Left/Right/Spare register if necessary
+    expression = tokens[offset]
+    new_offset = 0
+    if expression in binary_expression_function_map().keys():
+        # Figure out if both arguments are binary expressions themselves
+        # and if so, use Left and Spare (if argument is left arg) or
+        # Right and Spare (if argument is right arg) and then copy
+        # the value
+        output_brainfuck, new_offset = evaluate_binary_expression(
+            target_register,
+            tokens,
+            memory,
+            offset+1)
+        # At this point, all the required nested calculations are done
+        # and the Left Right registers are correctly populated. Do the
+        # calculation and put it where it's meant to go
+        output_brainfuck += binary_expression_function_map()[expression](
+            target_register,
+            memory)
+
+    elif expression in unary_expression_function_map().keys():
+        output_brainfuck, new_offset = evaluate_unary_expression(target_register,
+                                                                 tokens,
+                                                                 memory,
+                                                                 offset+1)
+        output_brainfuck += unary_expression_function_map()[expression](
+            target_register,
+            memory)
+
+    elif expression in terminal_function_map().keys():
+        new_offset = offset + 2
+        output_brainfuck += terminal_function_map()[expression](
+            target_register,
+            tokens,
+            memory,
+            offset)
+    else:
+        print(expression)
+        print(tokens[offset-5:offset+5])
+        raise Exception("Expression not found.")
+
+
+    return [output_brainfuck, new_offset]
+
+def evaluate_binary_expression(target_register,
+                               tokens,
+                               memory,
+                               offset):
+    output_brainfuck = ""
+    output_brainfuck += memory.zero_value_at_offset(memory.left_register_offset)
+    output_brainfuck += memory.zero_value_at_offset(memory.right_register_offset)
+    left_brainfuck, right_offset = evaluate_expression(
+        memory.left_register_offset,
+        tokens,
+        memory,
+        offset)
+    right_brainfuck, end_offset = evaluate_expression(
+        memory.right_register_offset,
+        tokens,
+        memory,
+        right_offset)
+    output_brainfuck += left_brainfuck + right_brainfuck
+    return [output_brainfuck, end_offset + 1]
+
+def evaluate_unary_expression(target_register,
+                              tokens,
+                              memory,
+                              offset):
+    output_brainfuck = ""
+    output_brainfuck += memory.zero_value_at_offset(memory.left_register_offset)
+    output_brainfuck, new_offset = evaluate_expression(
+        memory.left_register_offset,
+        tokens,
+        memory,
+        offset)
+    return [output_brainfuck, new_offset+1]
 
 def extract_next_elements(tokens, number_of_elements, offset):
     """Starting from the offset element of the tokens array, extract the
@@ -649,7 +852,9 @@ def token_function_map():
                     "enter_scene": enter_character,
                     "exit_scene": exit_character,
                     "activate": activate_character,
-                    "copy_test": copy_test}
+                    "assign": assign,
+                    "output": output_character,
+                    "break": breakpoint}
     return function_map
 
 def token_pairs():
@@ -657,8 +862,39 @@ def token_pairs():
                  "enter_scene_multiple": ["enter_scene_multiple",
                                           "end_enter_scene_multiple"],
                  "exit_scene_multiple": ["exit_scene_multiple",
-                                         "end_exit_scene_multiple"]}
+                                         "end_exit_scene_multiple"],
+                 "assign": ["assign",
+                            "end_assign"]}
     return pairs_map
+
+def binary_expression_function_map():
+    function_map = {"add": add_expression,
+                    "sub": sub_expression,
+                    "mul": mul_expression,
+                    "mod": mod_expression,
+                    "div": div_expression}
+    return function_map
+
+def binary_expression_pairs():
+    pairs_map = {"add": ["add", "end_add"],
+                 "sub": ["sub", "end_sub"],
+                 "mul": ["mul", "end_mul"],
+                 "mod": ["mod", "end_mod"],
+                 "div": ["div", "end_div"]}
+    return pairs_map
+
+def unary_expression_function_map():
+    function_map = {"cube": cube_expression,
+                    "factorial": factorial_expression,
+                    "square": square_expression,
+                    "sqrt": sqrt_expression,
+                    "twice": twice_expression}
+    return function_map
+
+def terminal_function_map():
+    function_map = {"value_of": value_of_expression,
+                    "const": const_expression}
+    return function_map
 
 if __name__ == "__main__":
     mem = MemoryLayout()
