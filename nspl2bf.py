@@ -706,8 +706,21 @@ def sub_expression(target_register, memory):
     return output_brainfuck
 
 def mul_expression(target_register, memory):
+    left_register_offset = memory.get_character_stack_position_offset(
+        "left",
+        memory.left_register_counter)
+    # Keep copying Left into Target until Loop runs out
     output_brainfuck = ""
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.copy_register(left_register_offset,
+                                             target_register)
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
     return output_brainfuck
+
 def mod_expression(target_register, memory):
     output_brainfuck = ""
     return output_brainfuck
