@@ -31,12 +31,13 @@ class MemoryLayout:
         self.loop_register_offset = 2
         self.retrieve_register_offset = 3
         self.temp_register_offset = 4
-        self.right_register_offset = 5
-        self.on_stage_one_register_offset = 6
-        self.on_stage_two_register_offset = 7
-        self.active_character_register_offset = 8
-        self.second_character_register_offset = 9
-        self.first_character_offset = 10
+        self.temp_two_register_offset = 5
+        self.right_register_offset = 6
+        self.on_stage_one_register_offset = 7
+        self.on_stage_two_register_offset = 8
+        self.active_character_register_offset = 9
+        self.second_character_register_offset = 10
+        self.first_character_offset = 11
         self.characters = ["left"]
         self.character_to_offset = {}
         self.left_register_counter = 0
@@ -724,8 +725,119 @@ def mul_expression(target_register, memory):
 def mod_expression(target_register, memory):
     output_brainfuck = ""
     return output_brainfuck
+
 def div_expression(target_register, memory):
+    left_register_offset = memory.get_character_stack_position_offset(
+        "left",
+        memory.left_register_counter)
     output_brainfuck = ""
+    # Counter
+    output_brainfuck += memory.zero_value_at_offset(memory.temp_register_offset)
+    # Loop needs to be zeroed
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.loop_register_offset)
+
+    # Loop over Left until left_zero is set
+    output_brainfuck += memory.move_pointer_to_offset(left_register_offset)
+    output_brainfuck += "[" + memory.reset_pointer()
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.retrieve_register_offset)
+    output_brainfuck += memory.copy_register(memory.right_register_offset,
+                                             memory.loop_register_offset)
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.loop_register_offset)
+    output_brainfuck += "[" + memory.reset_pointer()
+    output_brainfuck += memory.subtract_value_at_offset(
+        1,
+        memory.loop_register_offset)
+    output_brainfuck += memory.subtract_value_at_offset(1,
+                                                        left_register_offset)
+    output_brainfuck += memory.move_pointer_to_offset(left_register_offset)
+    output_brainfuck += "[" + memory.reset_pointer()
+    output_brainfuck += memory.add_value_at_offset(
+        1,
+        memory.retrieve_register_offset)
+    output_brainfuck += memory.move_pointer_to_offset(left_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.copy_register_offset)
+    output_brainfuck += "+" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(left_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(left_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.copy_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(left_register_offset)
+    output_brainfuck += "+" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.copy_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.loop_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+
+    # Check if Right is equal to Retrieve. If not, left = 0.
+    # If so, counter + 1
+    output_brainfuck += memory.copy_register(memory.right_register_offset,
+                                             memory.loop_register_offset)
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.retrieve_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.loop_register_offset)
+    output_brainfuck += "-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.retrieve_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+
+    # Test Loop and wipe out left if true
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.loop_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        left_register_offset)
+    output_brainfuck += "[-]" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.loop_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+
+    # If left isn't zero, we didn't nuke it, so add one to the counter
+    output_brainfuck += memory.move_pointer_to_offset(left_register_offset)
+    output_brainfuck += "[" + memory.reset_pointer()
+    output_brainfuck += memory.add_value_at_offset(
+        1,
+        memory.temp_register_offset)
+    output_brainfuck += memory.move_pointer_to_offset(left_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.copy_register_offset)
+    output_brainfuck += "+" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(left_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(left_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.copy_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(left_register_offset)
+    output_brainfuck += "+" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.copy_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        left_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    output_brainfuck += memory.copy_register(memory.temp_register_offset,
+                                             target_register)
+    # Cleanup
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.temp_register_offset)
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.loop_register_offset)
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.retrieve_register_offset)
     return output_brainfuck
 
 def cube_expression(target_register, memory):
@@ -762,8 +874,6 @@ def cube_expression(target_register, memory):
         memory.retrieve_register_offset)
     output_brainfuck += memory.zero_value_at_offset(
         memory.loop_register_offset)
-    output_brainfuck += memory.zero_value_at_offset(
-        target_register)
     output_brainfuck += memory.copy_register(temp_register_offset,
                                              target_register)
     output_brainfuck += memory.zero_value_at_offset(
@@ -795,8 +905,6 @@ def square_expression(target_register, memory):
     output_brainfuck += "]" + memory.reset_pointer()
     output_brainfuck += memory.zero_value_at_offset(
         memory.loop_register_offset)
-    output_brainfuck += memory.zero_value_at_offset(
-        target_register)
     output_brainfuck += memory.copy_register(temp_register_offset,
                                              target_register)
     output_brainfuck += memory.zero_value_at_offset(
@@ -806,9 +914,29 @@ def square_expression(target_register, memory):
 def sqrt_expression(target_register, memory):
     output_brainfuck = ""
     return output_brainfuck
+
 def twice_expression(target_register, memory):
+    # Keep copying Left into Target until Loop runs out
     output_brainfuck = ""
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.temp_register_offset)
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.temp_register_offset)
+    output_brainfuck += "++" + memory.reset_pointer()
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    output_brainfuck += memory.copy_register(memory.temp_register_offset,
+                                             target_register)
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.temp_register_offset)
     return output_brainfuck
+
 def value_of_expression(target_register,
                         tokens,
                         memory,
