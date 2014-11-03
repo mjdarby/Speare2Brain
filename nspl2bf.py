@@ -37,8 +37,9 @@ class MemoryLayout:
         self.active_character_register_offset = 8
         self.second_character_register_offset = 9
         self.first_character_offset = 10
-        self.characters = []
+        self.characters = ["left"]
         self.character_to_offset = {}
+        self.left_register_counter = 0
 
     def add_character(self, character_name):
         self.characters.append(character_name)
@@ -70,6 +71,20 @@ class MemoryLayout:
             offset += len(self.characters)
             self.pointer = offset
             return ">" * offset
+        except KeyError:
+            print("Error: Character does not exist: " + character_name,
+                  file=sys.stderr)
+            raise
+
+    def get_character_stack_position_offset(self,
+                                            character_name,
+                                            stack_pos):
+        """Outputs the required Brainfuck commands to move to the
+        passed character's stack counter"""
+        try:
+            offset = self.character_to_offset[character_name]
+            offset += (len(self.characters) + 1) * stack_pos
+            return offset
         except KeyError:
             print("Error: Character does not exist: " + character_name,
                   file=sys.stderr)
@@ -653,37 +668,43 @@ def assign(tokens, memory, offset):
 # Binary and unary functions will destroy Left and Right during
 # processing
 def add_expression(target_register, memory):
+    left_register_offset = memory.get_character_stack_position_offset(
+        "left",
+        memory.left_register_counter)
     # Add Right to Left and jam it in the target register
     output_brainfuck = ""
     output_brainfuck += memory.move_pointer_to_offset(
         memory.right_register_offset)
     output_brainfuck += "[-" + memory.reset_pointer()
     output_brainfuck += memory.move_pointer_to_offset(
-        memory.left_register_offset)
+        left_register_offset)
     output_brainfuck += "+" + memory.reset_pointer()
     output_brainfuck += memory.move_pointer_to_offset(
         memory.right_register_offset)
     output_brainfuck += "]" + memory.reset_pointer()
-    if (target_register != memory.left_register_offset):
-        output_brainfuck += memory.copy_register(memory.left_register_offset,
-                                                 target_register)
+    output_brainfuck += memory.copy_register(left_register_offset,
+                                             target_register)
     return output_brainfuck
+
 def sub_expression(target_register, memory):
+    left_register_offset = memory.get_character_stack_position_offset(
+        "left",
+        memory.left_register_counter)
     # Subtract Right from Left and jam it in the target register
     output_brainfuck = ""
     output_brainfuck += memory.move_pointer_to_offset(
         memory.right_register_offset)
     output_brainfuck += "[-" + memory.reset_pointer()
     output_brainfuck += memory.move_pointer_to_offset(
-        memory.left_register_offset)
+        left_register_offset)
     output_brainfuck += "-" + memory.reset_pointer()
     output_brainfuck += memory.move_pointer_to_offset(
         memory.right_register_offset)
     output_brainfuck += "]" + memory.reset_pointer()
-    if (target_register != memory.left_register_offset):
-        output_brainfuck += memory.copy_register(memory.left_register_offset,
-                                                 target_register)
+    output_brainfuck += memory.copy_register(left_register_offset,
+                                             target_register)
     return output_brainfuck
+
 def mul_expression(target_register, memory):
     output_brainfuck = ""
     return output_brainfuck
@@ -795,10 +816,14 @@ def evaluate_binary_expression(target_register,
                                memory,
                                offset):
     output_brainfuck = ""
-    output_brainfuck += memory.zero_value_at_offset(memory.left_register_offset)
+    left_register_offset = memory.get_character_stack_position_offset(
+        "left",
+        memory.left_register_counter)
+    output_brainfuck += memory.zero_value_at_offset(left_register_offset)
     output_brainfuck += memory.zero_value_at_offset(memory.right_register_offset)
+    memory.left_register_counter += 1
     left_brainfuck, right_offset = evaluate_expression(
-        memory.left_register_offset,
+        left_register_offset,
         tokens,
         memory,
         offset)
@@ -808,6 +833,7 @@ def evaluate_binary_expression(target_register,
         memory,
         right_offset)
     output_brainfuck += left_brainfuck + right_brainfuck
+    memory.left_register_counter -= 1
     return [output_brainfuck, end_offset + 1]
 
 def evaluate_unary_expression(target_register,
@@ -815,9 +841,9 @@ def evaluate_unary_expression(target_register,
                               memory,
                               offset):
     output_brainfuck = ""
-    output_brainfuck += memory.zero_value_at_offset(memory.left_register_offset)
+    output_brainfuck += memory.zero_value_at_offset(memory.right_register_offset)
     output_brainfuck, new_offset = evaluate_expression(
-        memory.left_register_offset,
+        memory.right_register_offset,
         tokens,
         memory,
         offset)
