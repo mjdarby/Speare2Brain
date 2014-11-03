@@ -30,7 +30,7 @@ class MemoryLayout:
         self.result_register_offset = 1
         self.loop_register_offset = 2
         self.retrieve_register_offset = 3
-        self.left_register_offset = 4
+        self.temp_register_offset = 4
         self.right_register_offset = 5
         self.on_stage_one_register_offset = 6
         self.on_stage_two_register_offset = 7
@@ -727,15 +727,82 @@ def mod_expression(target_register, memory):
 def div_expression(target_register, memory):
     output_brainfuck = ""
     return output_brainfuck
+
 def cube_expression(target_register, memory):
+    temp_register_offset = memory.temp_register_offset
     output_brainfuck = ""
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.loop_register_offset)
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.temp_register_offset)
+    output_brainfuck += memory.copy_register(memory.right_register_offset,
+                                             memory.loop_register_offset)
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.copy_register(memory.loop_register_offset,
+                                             temp_register_offset)
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    output_brainfuck += memory.copy_register(temp_register_offset,
+                                             memory.retrieve_register_offset)
+    output_brainfuck += memory.zero_value_at_offset(temp_register_offset)
+    output_brainfuck += memory.copy_register(memory.loop_register_offset,
+                                             memory.right_register_offset)
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.copy_register(memory.retrieve_register_offset,
+                                             temp_register_offset)
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.retrieve_register_offset)
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.loop_register_offset)
+    output_brainfuck += memory.zero_value_at_offset(
+        target_register)
+    output_brainfuck += memory.copy_register(temp_register_offset,
+                                             target_register)
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.temp_register_offset)
     return output_brainfuck
+
 def factorial_expression(target_register, memory):
     output_brainfuck = ""
     return output_brainfuck
+
 def square_expression(target_register, memory):
+    temp_register_offset = memory.temp_register_offset
+    # Keep copy Right into Loop and use Loop like Right in the Mul
+    # function
     output_brainfuck = ""
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.loop_register_offset)
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.temp_register_offset)
+    output_brainfuck += memory.copy_register(memory.right_register_offset,
+                                             memory.loop_register_offset)
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "[-" + memory.reset_pointer()
+    output_brainfuck += memory.copy_register(memory.loop_register_offset,
+                                             temp_register_offset)
+    output_brainfuck += memory.move_pointer_to_offset(
+        memory.right_register_offset)
+    output_brainfuck += "]" + memory.reset_pointer()
+    output_brainfuck += memory.zero_value_at_offset(
+        memory.loop_register_offset)
+    output_brainfuck += memory.zero_value_at_offset(
+        target_register)
+    output_brainfuck += memory.copy_register(temp_register_offset,
+                                             target_register)
+    output_brainfuck += memory.zero_value_at_offset(
+        temp_register_offset)
     return output_brainfuck
+
 def sqrt_expression(target_register, memory):
     output_brainfuck = ""
     return output_brainfuck
@@ -821,7 +888,6 @@ def evaluate_expression(target_register, tokens, memory, offset):
         print(tokens[offset-5:offset+5])
         raise Exception("Expression not found.")
 
-
     return [output_brainfuck, new_offset]
 
 def evaluate_binary_expression(target_register,
@@ -855,11 +921,12 @@ def evaluate_unary_expression(target_register,
                               offset):
     output_brainfuck = ""
     output_brainfuck += memory.zero_value_at_offset(memory.right_register_offset)
-    output_brainfuck, new_offset = evaluate_expression(
+    eval_brainfuck, new_offset = evaluate_expression(
         memory.right_register_offset,
         tokens,
         memory,
         offset)
+    output_brainfuck += eval_brainfuck
     return [output_brainfuck, new_offset+1]
 
 def extract_next_elements(tokens, number_of_elements, offset):
