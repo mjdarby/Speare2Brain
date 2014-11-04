@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 ########################################################################
 #
 #  Speare2Brain, the Shakespeare -> Brainfuck transpiler
@@ -131,6 +133,18 @@ class MemoryLayout:
 
         return output_brainfuck
 
+    def copy_from_first_character_register(self,
+                                            destination_register_offset):
+        """Copies the content of the active characters's register into
+        a destination register via addition. Assumes Copy will be zero.
+        Same for Loop."""
+        copy_function = lambda source, dest: self.copy_register(dest, source)
+        output_brainfuck = self.copy_first_character_skeleton(
+            destination_register_offset,
+            copy_function)
+
+        return output_brainfuck
+
     def copy_into_second_character_register(self,
                                             source_register_offset):
         """Copies the content of the source register into
@@ -164,7 +178,25 @@ class MemoryLayout:
         return output_brainfuck
 
     def copy_second_character_skeleton(self,
-                                       register, copy_function):
+                                       register,
+                                       copy_function):
+        return self.copy_character_skeleton(
+            register,
+            copy_function,
+            self.second_character_register_offset)
+
+    def copy_first_character_skeleton(self,
+                                       register,
+                                       copy_function):
+        return self.copy_character_skeleton(
+            register,
+            copy_function,
+            self.active_character_register_offset)
+
+    def copy_character_skeleton(self,
+                                register,
+                                copy_function,
+                                character_register):
         """Provides the skeleton code for copying into/from the second
         character"""
         retrieve_register_offset = self.retrieve_register_offset
@@ -174,7 +206,7 @@ class MemoryLayout:
         # Setup our Copy and Loop registers, Loop will be made zero
         # once we enter the inner loop
         output_brainfuck += self.copy_register(
-            self.second_character_register_offset,
+            character_register,
             self.retrieve_register_offset)
         output_brainfuck += self.add_value_at_offset(
             1,
@@ -946,6 +978,9 @@ def value_of_expression(target_register,
     if character == "second_person":
         output_brainfuck += memory.copy_from_second_character_register(
             target_register)
+    elif character == "first_person":
+        output_brainfuck += memory.copy_from_first_character_register(
+            target_register)
     else:
         character_register = memory.character_to_offset[character]
         output_brainfuck += memory.copy_register(character_register,
@@ -1068,9 +1103,14 @@ def extract_elements_between_tokens(tokens, token_pair, offset):
     first occurrence of the end token."""
     elements = []
     start_token, end_token = token_pair[0], token_pair[1]
+    empty_exp = start_token + "," + end_token
     reg_exp = start_token + ",(.*?)," + end_token
 
     string_to_search = ",".join(tokens[offset:])
+    empty_match = re.match(empty_exp, string_to_search)
+    if empty_match:
+        return []
+
     reg_match = re.match(reg_exp, string_to_search)
     if reg_match:
         elements = reg_match.group(1)
@@ -1130,10 +1170,21 @@ def terminal_function_map():
                     "const": const_expression}
     return function_map
 
+def tidy_up(brainfuck):
+    """Removes adjacent <>"""
+    def balance(match):
+        string = match.group(0)
+        while len(string) > 1 and string[0] != string[-1]:
+            string = string[1:-1]
+        return string
+    brainfuck = re.sub('<+>+', balance, brainfuck)
+    brainfuck = re.sub('>+<+', balance, brainfuck)
+    return brainfuck
+
 if __name__ == "__main__":
     mem = MemoryLayout()
     if len(sys.argv) < 2:
-        print("Usage: ./brain2speare.py input.b > output.spl")
+        print("Usage: ./nspl2bf.py input.nspl > output.bf")
         sys.exit(2)
     filename = sys.argv[1]
     try:
@@ -1147,4 +1198,5 @@ if __name__ == "__main__":
     f.close()
 
     brainfuck = parse_file(text, mem)
+    brainfuck = tidy_up(brainfuck)
     print(brainfuck)

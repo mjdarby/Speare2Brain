@@ -375,7 +375,7 @@ THIRD_PERSON_POSSESSIVE UnarticulatedConstant {
   free($1);
 }|
 NOTHING {
-  $$ = newstr("0,");
+  $$ = newstr("const, 0,");
   free($1);
 };
 

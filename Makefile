@@ -66,6 +66,8 @@ grammar.tab.o: grammar.tab.c grammar.tab.h telma.h
 install: spl2nspl
 	mkdir -p spl/bin
 	cp -pf spl2nspl spl/bin
+	cp -pf speare2brain.py spl/bin
+	cp -pf nspl2bf.py spl/bin
 
 makescanner: makescanner.o
 	$(CC) $< $(CCFLAGS) -o $@

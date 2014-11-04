@@ -33,19 +33,19 @@
 SPLPATH = ../spl
 
 # compiler commands
-SPL2NSPL = $(SPLPATH)/bin/spl2nspl
+SPL2BF = $(SPLPATH)/bin/speare2brain.py
 
 
 # target files
-TARGETS = $(patsubst %.spl, %.nspl, $(wildcard *.spl))
+TARGETS = $(patsubst %.spl, %.bf, $(wildcard *.spl))
 
 .PHONY: all
 all: $(TARGETS)
 
-%.nspl: %.spl
-	  $(SPL2NSPL) < $< > $@
+%.bf: %.spl
+	  $(SPL2BF) $< > $@
 
 # clean-up funtion
 .PHONY: clean
 clean:
-	rm -f *~ *.c *.o core $(TARGETS)
+	rm -f *~ *.nspl *.bf core $(TARGETS)
